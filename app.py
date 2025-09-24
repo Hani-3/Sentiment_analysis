@@ -23,7 +23,7 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    predictor = pickle.load(open(r"/home/petpooja-1154/Projects/Course/sentiment_analysis/model_xgb.pkl","rb"))
+    predictor = pickle.load(open(r"/home/petpooja-1154/Projects/Course/sentiment_analysis/model_lr.pkl","rb"))
     scaler = pickle.load(open(r"/home/petpooja-1154/Projects/Course/sentiment_analysis/scaler.pkl", "rb"))
     cv = pickle.load(open(r"/home/petpooja-1154/Projects/Course/sentiment_analysis/countVectorizer.pkl", "rb"))
     try:
