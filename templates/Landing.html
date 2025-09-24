@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentiment Analysis</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px #ccc; }
+        h1 { text-align: center; }
+        .section { margin-bottom: 30px; }
+        .result { margin-top: 15px; font-weight: bold; }
+        #graph-img { display: block; margin: 20px auto; max-width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sentiment Analysis</h1>
+
+        <div class="section">
+            <h2>Single Text Prediction</h2>
+            <textarea id="text-input" rows="3" style="width:100%;" placeholder="Enter text here..."></textarea><br>
+            <button onclick="predictText()">Predict Sentiment</button>
+            <div id="text-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>Bulk Prediction (CSV Upload)</h2>
+            <form id="csv-form" enctype="multipart/form-data">
+                <input type="file" id="csv-file" accept=".csv" required>
+                <button type="submit">Upload & Predict</button>
+            </form>
+            <a id="download-link" style="display:none;" download="Predictions.csv">Download Predictions</a>
+            <img id="graph-img" src="" alt="Sentiment Distribution Graph" style="display:none;">
+        </div>
+    </div>
+
+    <script>
+        function predictText() {
+            const text = document.getElementById('text-input').value;
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('text-result').innerText = data.prediction ? `Prediction: ${data.prediction}` : `Error: ${data.error}`;
+            });
+        }
+
+        document.getElementById('csv-form').onsubmit = function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('csv-file');
+            if (!fileInput.files.length) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(async response => {
+                if (!response.ok) throw new Error('Bulk prediction failed');
+                // Download CSV
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const downloadLink = document.getElementById('download-link');
+                downloadLink.href = url;
+                downloadLink.style.display = 'inline';
+                downloadLink.innerText = 'Download Predictions';
+
+                // Show graph if available
+                if (response.headers.get('X-Graph-Exists') === 'true') {
+                    const graphData = response.headers.get('X-Graph-Data');
+                    document.getElementById('graph-img').src = 'data:image/png;base64,' + graphData;
+                    document.getElementById('graph-img').style.display = 'block';
+                } else {
+                    document.getElementById('graph-img').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                alert('Error: ' + err.message);
+            });
+        };
+    </script>
+</body>
+</html>
